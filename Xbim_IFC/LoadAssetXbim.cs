@@ -45,11 +45,7 @@ public class LoadAssetXbim : MonoBehaviour
         };
 
         const string fileName = "IFCBuilding";
-        //const string fileName = "Rvt_ifc_Wall";
-        //const string fileName = "rac_basic_sample_project";
-        //const string fileName = "walltemp";
-        //const string fileName = "dooooooors";
-
+  
         using (var fs = new FileStream(fileName+".wexBIM", FileMode.Open, FileAccess.Read))
         {
             using (var br = new BinaryReader(fs))
@@ -153,7 +149,7 @@ public class LoadAssetXbim : MonoBehaviour
                             int id = 0;
    
                             TriangleIndex = 0;
-                            
+                            //this part can be left out of the loop, because all repes share the same mesh, hense the same vertices and triangles
                             for (int j = 0; j < VerticesCount; j++)
                             {
                                 var vert = new Vector3(Flo_convert(triangulation.Vertices[j].X), Flo_convert(triangulation.Vertices[j].Y), Flo_convert(triangulation.Vertices[j].Z));
