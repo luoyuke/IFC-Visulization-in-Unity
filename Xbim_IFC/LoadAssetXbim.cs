@@ -24,7 +24,7 @@ public class LoadAssetXbim : MonoBehaviour
         return result;
     }
 
-    void Start()
+    void Awake()
     {
         Material true_mat = new Material(Shader.Find("Standard"));
 
@@ -32,20 +32,8 @@ public class LoadAssetXbim : MonoBehaviour
         GameObject go;
         Mesh mesh;
 
-        var editor = new XbimEditorCredentials
-        {
-            ApplicationDevelopersName = "yuke",
-            ApplicationFullName = "ifc_to_unity",
-            ApplicationIdentifier = "Your app ID",
-            ApplicationVersion = "4.0",
-            //your user
-            EditorsFamilyName = "Luo",
-            EditorsGivenName = "Yuke",
-            EditorsOrganisationName = "Educational study"
-        };
-
         const string fileName = "IFCBuilding";
-  
+
         using (var fs = new FileStream(fileName+".wexBIM", FileMode.Open, FileAccess.Read))
         {
             using (var br = new BinaryReader(fs))
@@ -93,6 +81,9 @@ public class LoadAssetXbim : MonoBehaviour
                     var productType = br.ReadInt16();
                     var boxBytes = br.ReadBytes(6 * sizeof(float));
                     XbimRect3D bb = XbimRect3D.FromArray(boxBytes);
+                    //is this the factor to magnify/demise an ifcproduct?
+                    Debug.Log("product Label: " + productLabel + " ,productType: " + productType);
+                    
                 }
                 for (int i = 0; i < shapeCount; i++)
                 {
@@ -110,8 +101,8 @@ public class LoadAssetXbim : MonoBehaviour
                             var instanceLabel = br.ReadInt32();
                             var styleId = br.ReadInt32();
                             var transform = XbimMatrix3D.FromArray(br.ReadBytes(sizeof(double) * 16));
+                           // Debug.Log("ifcProductLabel: " + ifcProductLabel+ " ,instanceTypeId: " + instanceTypeId + " ,instanceLabel: " + instanceLabel);
 
-                            
                             go = new GameObject(ifcProductLabel.ToString());
                             go.transform.parent = parent.transform;
                             repes[j] = go;
@@ -139,31 +130,27 @@ public class LoadAssetXbim : MonoBehaviour
                         int VerticesCount = triangulation.Vertices.Count;
                         int FaceCount = triangulation.Faces.Count;
                         
-                       Vector3[] vertices = new Vector3[VerticesCount]; //these eventully write into unity gameobject
+                        Vector3[] vertices = new Vector3[VerticesCount]; //these eventully write into unity gameobject
                         int[] triangleIndices = new int[TriangleIndexCount];
 
-                        //Debug.Log("styleId:" + styleId + ", ifcProductLabel: " + ifcProductLabel + ", faceCount: " + FaceCount + ", TriangleIndexCount: " + TriangleIndexCount);
-                        int TriangleIndex;
+                        int TriangleIndex = 0;
+                        for (int j = 0; j < VerticesCount; j++)
+                        {
+                            var vert = new Vector3(Flo_convert(triangulation.Vertices[j].X), Flo_convert(triangulation.Vertices[j].Y), Flo_convert(triangulation.Vertices[j].Z));
+                            vertices[j] = vert / meter;
+                        }
+
+                        for (int j = 0; j < FaceCount; j++)
+                        {
+                            for (int k = 0; k < triangulation.Faces[j].Indices.Count; k++)
+                            {
+                                triangleIndices[TriangleIndex++] = triangulation.Faces[j].Indices[k];
+                            }
+                        }
+
                         foreach (var repete in repes)
                         {
                             int id = 0;
-   
-                            TriangleIndex = 0;
-                            //this part can be left out of the loop, because all repes share the same mesh, hense the same vertices and triangles
-                            for (int j = 0; j < VerticesCount; j++)
-                            {
-                                var vert = new Vector3(Flo_convert(triangulation.Vertices[j].X), Flo_convert(triangulation.Vertices[j].Y), Flo_convert(triangulation.Vertices[j].Z));
-                                vertices[j] = vert / meter;
-                            }
-                            
-                            for (int j = 0; j < FaceCount; j++)
-                            {
-                                for (int k = 0; k < triangulation.Faces[j].Indices.Count; k++)
-                                {
-                                    triangleIndices[TriangleIndex++] = triangulation.Faces[j].Indices[k];
-                                }
-                            }
-
                             repete.AddComponent<MeshFilter>();
                             repete.AddComponent<MeshRenderer>();
                             mesh = new Mesh() ;
@@ -190,6 +177,7 @@ public class LoadAssetXbim : MonoBehaviour
                         var styleId = br.ReadInt32();
                         XbimShapeTriangulation triangulation = br.ReadShapeTriangulation();
                         //     Assert.IsTrue(triangulation.Vertices.Count > 0, "Number of vertices should be greater than zero");
+                        //Debug.Log("ifcProductLabel: " + ifcProductLabel + " ,instanceTypeId: " + instanceTypeId + " ,instanceLabel: " + instanceLabel);
 
                         go = new GameObject(ifcProductLabel.ToString());
                         go.transform.parent = parent.transform;
@@ -217,8 +205,7 @@ public class LoadAssetXbim : MonoBehaviour
 
                         Vector3[] vertices = new Vector3[VerticesCount]; //these eventully write into unity gameobject
                         int[] triangleIndices = new int[TriangleIndexCount];
-                        //Debug.Log("styleId:" + styleId + ", ifcProductLabel: " + ifcProductLabel + ", faceCount: " + FaceCount + ", TriangleIndexCount: " + TriangleIndexCount);
-
+                      
                         for (int j = 0; j < VerticesCount; j++)
                         {
                             vertices[j] = new Vector3(Flo_convert(triangulation.Vertices[j].X), Flo_convert(triangulation.Vertices[j].Y), Flo_convert(triangulation.Vertices[j].Z));
@@ -244,7 +231,7 @@ public class LoadAssetXbim : MonoBehaviour
         
             }
         }
-        Debug.Log("finish start");
+        Debug.Log("finish start meathod");
     }
     private void Update()
     {
@@ -253,7 +240,7 @@ public class LoadAssetXbim : MonoBehaviour
         {
             GameObject go = GameObject.Find("WexbimModel");
             go.transform.Rotate(-90f,0,0); //first generate Wexbim XYZ then rotate the parent to XZY
-            
+            go.transform.localScale = new Vector3(-1f,1,1); // flip the model MIRROR
             foreach (var child in go.GetComponentsInChildren<Transform>())
             {
                 if (child.gameObject.name == "WexbimModel")
