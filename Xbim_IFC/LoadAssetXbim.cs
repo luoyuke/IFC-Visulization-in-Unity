@@ -82,7 +82,7 @@ public class LoadAssetXbim : MonoBehaviour
                     var boxBytes = br.ReadBytes(6 * sizeof(float));
                     XbimRect3D bb = XbimRect3D.FromArray(boxBytes);
                     //is this the factor to magnify/demise an ifcproduct?
-                    Debug.Log("product Label: " + productLabel + " ,productType: " + productType);
+                   // Debug.Log("product Label: " + productLabel + " ,productType: " + productType);
                     
                 }
                 for (int i = 0; i < shapeCount; i++)
@@ -251,7 +251,7 @@ public class LoadAssetXbim : MonoBehaviour
 
                 if (meshRenderer.material.color.a <.95f)    //only rewrite the shader when alpha make a difference
                     meshRenderer.material.shader = Shader.Find("Transparent/VertexLit");
-                else meshRenderer.material.shader = Shader.Find("CullOffStandard"); //custome shader to render both sides of the face 
+                else meshRenderer.material.shader = Shader.Find("Standard"); //custome shader to render both sides of the face. Standard & CullOffStandard CullOff seems leaking light from behind
             }
             swch = true;
         }
